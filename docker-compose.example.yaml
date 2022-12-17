@@ -1,0 +1,21 @@
+version: '3.4'
+
+services:
+
+  telegram-bot-whisper-transcriber:
+    image: viperey/telegram-bot-whisper-transcriber:1.0
+    container_name: telegram-bot-whisper-transcriber
+    volumes:
+      - ~/.cache/whisper:/root/.cache/whisper
+    environment:
+      - TELEGRAM_BOT_TOKEN=
+      - ALLOWED_CHAT_IDS=
+      - WHISPER_DEVICE=cpu
+      - WHISPER_MODEL=large
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 1024M

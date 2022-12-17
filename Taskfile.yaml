@@ -1,0 +1,60 @@
+version: '3'
+
+env:
+  MODEL: large
+  DEVICE: cpu
+
+vars:
+  REGISTRY_USER: 'viperey'
+  REGISTRY_URL: 'registry-1.docker.io'
+  IMAGE_NAME: 'viperey/telegram-bot-whisper-transcriber'
+  IMAGE_VERSION: '1.0'
+  IMAGE_CURRENT: '{{ .IMAGE_NAME }}:{{ .IMAGE_VERSION}}'
+  IMAGE_BUILD_CACHE_LOCK: '{{ .IMAGE_NAME }}:build-cache-lock'
+
+tasks:
+  docker:login:
+    cmds:
+      - docker login -u {{ .REGISTRY_USER }} {{ .REGISTRY_URL }}
+
+  docker:build:
+    cmds:
+      - DOCKER_BUILDKIT=1 docker build --progress plain --cache-from {{ .CACHE_IMAGE_NAME }} --tag {{ .BUILDING_IMAGE_NAME }} .
+    vars: {
+      BUILDING_IMAGE_NAME: '{{ .IMAGE_CURRENT }}',
+      CACHE_IMAGE_NAME: '{{ .IMAGE_BUILD_CACHE_LOCK }}'
+    }
+
+  docker:tag:
+    cmds:
+      - docker tag {{ .SOURCE_IMAGE_NAME }} {{ .DESTINATION_IMAGE_NAME }}
+
+  docker:push:
+    cmds:
+      - docker push {{ .PUSHING_IMAGE_NAME }}
+
+  docker:run:
+    cmds:
+      - docker-compose up
+
+  docker:package:
+    cmds:
+      - task: docker:login
+      - task: docker:build
+      - task: docker:tag
+        vars: {
+          SOURCE_IMAGE_NAME: '{{ .IMAGE_CURRENT }}',
+          DESTINATION_IMAGE_NAME: '{{ .IMAGE_BUILD_CACHE_LOCK }}'
+        }
+#      - task: docker:push
+#        vars: {
+#          PUSHING_IMAGE_NAME: '{{ .IMAGE_CURRENT }}'
+#        }
+#      - task: docker:push
+#        vars: {
+#          PUSHING_IMAGE_NAME: '{{ .IMAGE_BUILD_CACHE_LOCK }}'
+#        }
+
+  default:
+    cmds:
+      - task --list-all
