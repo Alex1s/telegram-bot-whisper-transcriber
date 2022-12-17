@@ -1,9 +1,13 @@
 # Whisper transcriber (telegram bot)
 
 Another whisper transcriber.  
-Simple, yet functional.
+Simple, yet functional voice message transcriber.  
+Add this bot to your group chat or use it directly by sending the voice messages to the bot (`@whispering_for_chaos_bot`).  
 
-## How to use
+![alt text](doc/screenshot.jpg "Logo Title Text 1")
+
+---
+## How to
 
 ### Create the bot
 
@@ -20,16 +24,17 @@ docker-compose up
 task docker:run
 ```
 
-## How to test
+### Use it
 
 If you want to simply test, open an issue mentioning your `chat_id` and I'll add it to my private running instance.
 
+---
 ## Disclaimer
 
 This bot only works in groups, not in private conversations.  
 Alternatively, you can forward an audio message to the bot `@whispering_for_chaos_bot` and it will pick it up.
 
-
+---
 ## Bibliography
 
 + https://developer.vonage.com/blog/21/10/01/python-environment-variables-a-primer
