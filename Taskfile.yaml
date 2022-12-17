@@ -46,14 +46,14 @@ tasks:
           SOURCE_IMAGE_NAME: '{{ .IMAGE_CURRENT }}',
           DESTINATION_IMAGE_NAME: '{{ .IMAGE_BUILD_CACHE_LOCK }}'
         }
-#      - task: docker:push
-#        vars: {
-#          PUSHING_IMAGE_NAME: '{{ .IMAGE_CURRENT }}'
-#        }
-#      - task: docker:push
-#        vars: {
-#          PUSHING_IMAGE_NAME: '{{ .IMAGE_BUILD_CACHE_LOCK }}'
-#        }
+      - task: docker:push
+        vars: {
+          PUSHING_IMAGE_NAME: '{{ .IMAGE_CURRENT }}'
+        }
+      - task: docker:push
+        vars: {
+          PUSHING_IMAGE_NAME: '{{ .IMAGE_BUILD_CACHE_LOCK }}'
+        }
 
   default:
     cmds:
