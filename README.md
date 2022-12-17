@@ -45,3 +45,8 @@ Alternatively, you can forward an audio message to the bot `@whispering_for_chao
 + https://huggingface.co/blog/fine-tune-whisper
 + https://github.com/chidiwilliams/buzz
 + https://github.com/openai/whisper/discussions/2
+
+
+## TODO
+
++ [-] Edit the results by iterating from smallest to largest (capped by the env var)

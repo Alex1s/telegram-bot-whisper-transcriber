@@ -130,9 +130,3 @@ application.add_handler(start_handler)
 application.add_handler(audio_message_handler)
 
 application.run_polling()
-
-# TODO
-# + README
-# + + Reference similar.
-# + + How to use
-# + Incremental model
