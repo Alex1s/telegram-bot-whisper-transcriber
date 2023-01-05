@@ -1,6 +1,6 @@
 from telegram import Message
 from telegram.ext.filters import MessageFilter
-import logging
+from logger import logger
 
 
 class FilterAllowedChats(MessageFilter):
@@ -12,8 +12,11 @@ class FilterAllowedChats(MessageFilter):
     def filter(self, message: Message) -> bool:
         is_voice = bool(message.voice)
         chat_id = str(message.chat.id)
+        if not is_voice:
+            logger.info(f"chat_id={chat_id}: ignoring a message because it is not a voice or audio message")
+            return False
         is_allowed_user = chat_id in self.allowed_chat_ids
         is_allowed = is_voice and is_allowed_user
         if not is_allowed:
-            logging.error(f"chat_id={chat_id} is not allowed")
+            logger.error(f"chat_id={chat_id} is not allowed")
         return is_allowed
