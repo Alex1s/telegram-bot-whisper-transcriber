@@ -10,6 +10,7 @@ from telegram import Update
 from telegram.ext import MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes
 
 from filter_allowed_chats import FilterAllowedChats
+from logger import logger
 
 
 def create_project_folder():
@@ -80,7 +81,7 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
 
     try:
         start_time = time.time()
-        logging.debug("Voice message received")
+        logger.debug("Voice message received")
         await set_typing_in_chat(context, effective_chat_id)
         await download_voice_message(context, file_id, mp3_audio_path, ogg_audio_path)
         result = await transcribe_audio(mp3_audio_path)
@@ -113,10 +114,10 @@ file_download_path = "/tmp/whispering-for-chaos"
 device = os.environ.get("WHISPER_DEVICE", default="cpu")
 whisper_model = os.environ.get("WHISPER_MODEL", default="large")
 escaping_chars = ['_', '*', '[', ']', '(', ')', '~', '>', '+', '-', '=', '|', '{', '}', '.', '!']
-logging.info(f"configuration: device={device}, whisper_model={whisper_model} allowed_chat_ids={allowed_chat_ids}")
-logging.info(f"Up to load whisper model, this might take a bit")
+logger.info(f"configuration: device={device}, whisper_model={whisper_model} allowed_chat_ids={allowed_chat_ids}")
+logger.info(f"Up to load whisper model, this might take a bit")
 model = whisper.load_model(whisper_model, device=device)
-logging.info(f"Finished loading the whisper model")
+logger.info(f"Finished loading the whisper model")
 
 
 create_project_folder()
