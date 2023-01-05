@@ -30,11 +30,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def clean_up_files(ogg_file_path, mp3_file_path):
-    os.remove(ogg_file_path)
-    os.remove(mp3_file_path)
-
-
 async def convert_ogg_to_mp3(ogg_file_path, mp3_file_path):
     given_audio = AudioSegment.from_file(ogg_file_path, format="ogg")
     given_audio.export(mp3_file_path, format="mp3")
@@ -74,17 +69,30 @@ async def transcribe_audio(mp3_audio_path):
 async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     effective_chat_id = update.effective_chat.id
     message_id = update.message.message_id
-    file_unique_id = update.message.voice.file_unique_id
-    file_id = update.message.voice.file_id
-    ogg_audio_path = os.path.join(file_download_path, f"{file_unique_id}.ogg")
-    mp3_audio_path = f"{ogg_audio_path}.mp3"
+    if update.message.voice:
+        file_unique_id = update.message.voice.file_unique_id
+        file_id = update.message.voice.file_id
+    elif update.message.audio:
+        file_unique_id = update.message.audio.file_unique_id
+        file_id = update.message.audio.file_id
+    elif update.message.video:
+        file_unique_id = update.message.video.file_unique_id
+        file_id = update.message.video.file_id
+    else:
+        logger.warning('Message is not a video, not an audio, not a voice.')
+        await context.bot.send_message(
+            chat_id=effective_chat_id,
+            text='Your message is not a video, not an audio, not a voice. I can not handle it',
+            reply_to_message_id=message_id,
+        )
+        return
 
     try:
         start_time = time.time()
         logger.debug("Voice message received")
         await set_typing_in_chat(context, effective_chat_id)
-        await download_voice_message(context, file_id, mp3_audio_path, ogg_audio_path)
-        result = await transcribe_audio(mp3_audio_path)
+        path = await (await context.bot.get_file(file_id)).download_to_drive()
+        result = await transcribe_audio(path)
 
         final_time = time.time()
         processing_time = (final_time - start_time)
@@ -100,12 +108,12 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         await context.bot.send_message(chat_id=effective_chat_id, text=error_message, reply_to_message_id=message_id)
         pass
     finally:
-        await clean_up_files(ogg_audio_path, mp3_audio_path)
+        os.remove(path)
 
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.NOTSET
 )
 
 bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
