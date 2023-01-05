@@ -5,6 +5,7 @@ import time
 
 import telegram
 import whisper
+from subtitles import generate_srt, generate_vtt
 from pydub import AudioSegment
 from telegram import Update
 from telegram.ext import MessageHandler, ApplicationBuilder, CommandHandler, ContextTypes
@@ -94,6 +95,10 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         path = await (await context.bot.get_file(file_id)).download_to_drive()
         result = await transcribe_audio(path)
 
+        # generate srt and vtt
+        srt_str = generate_srt(result["segments"])
+        vtt_str = generate_vtt(result["segments"])
+
         final_time = time.time()
         processing_time = (final_time - start_time)
 
@@ -102,6 +107,12 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
             chat_id=effective_chat_id, text=response_message, reply_to_message_id=message_id,
             parse_mode=telegram.constants.ParseMode.MARKDOWN_V2
         )
+        await context.bot.send_message(
+            chat_id=effective_chat_id,
+            text="Additionally you can find subtitle files in the following attachments."
+        )
+        await context.bot.send_document(effective_chat_id, srt_str.encode(), filename='subs.srt')
+        await context.bot.send_document(effective_chat_id, vtt_str.encode(), filename='subs.vtt')
 
     except Exception as e:
         error_message = f"Error converting video to audio. Exception={e}"
