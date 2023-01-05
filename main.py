@@ -12,6 +12,7 @@ from telegram.ext import MessageHandler, ApplicationBuilder, CommandHandler, Con
 
 from filter_allowed_chats import FilterAllowedChats
 from logger import logger
+from sub_video import sub_video
 
 
 def create_project_folder():
@@ -99,6 +100,10 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         srt_str = generate_srt(result["segments"])
         vtt_str = generate_vtt(result["segments"])
 
+        # if it is a video generated a subbed version of it
+        if update.message.video:
+            subbed_video_data = sub_video(path, srt_str)
+
         final_time = time.time()
         processing_time = (final_time - start_time)
 
@@ -113,6 +118,16 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         )
         await context.bot.send_document(effective_chat_id, srt_str.encode(), filename='subs.srt')
         await context.bot.send_document(effective_chat_id, vtt_str.encode(), filename='subs.vtt')
+
+        if update.message.video:
+            await context.bot.send_message(
+                chat_id=effective_chat_id,
+                text="You sent me a video. Thus here is a subbed version of the video:"
+            )
+            await context.bot.send_video(
+                chat_id=effective_chat_id,
+                video=subbed_video_data
+            )
 
     except Exception as e:
         error_message = f"Error converting video to audio. Exception={e}"
