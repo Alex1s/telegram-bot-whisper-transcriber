@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import time
+import urllib
 
 import telegram
 import whisper
@@ -44,6 +45,8 @@ async def set_typing_in_chat(context, effective_chat_id):
 async def get_as_markdown(text, processing_time):
     transcription = text["text"].removeprefix(" ")
     language_ = text["language"]
+    deepl_url = f'https://www.deepl.com/translator#{language_}/de/{urllib.parse.quote(transcription)}'\
+        .replace('#', '\\#') + '/'
     markdown_message = '''\
 Detected language: {language}
 Processing time: {processing_time}s
@@ -51,9 +54,10 @@ Transcription:
 ```
 {transcription}
 ```
+TRANSLATELINE
         '''.format(transcription=transcription, language=language_, processing_time=int(processing_time))
     escaped_markdown_message = await escape_markdown_chars(markdown_message)
-    return escaped_markdown_message
+    return escaped_markdown_message.replace('TRANSLATELINE', f'German translation: [here]({deepl_url})')
 
 
 async def download_voice_message(context, file_id, mp3_audio_path, ogg_audio_path):
