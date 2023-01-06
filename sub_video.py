@@ -1,10 +1,11 @@
+import asyncio
 from tempfile import NamedTemporaryFile
 from logger import logger
 import logging
 import subprocess
 
 
-def sub_video(video_file_path: str, sub_srt_str: str) -> bytes:
+def sub_video_sync(video_file_path: str, sub_srt_str: str) -> bytes:
     subs_file = NamedTemporaryFile()
     video_out_file = NamedTemporaryFile(suffix='.mp4')
     with open(subs_file.name, "w") as f:
@@ -21,7 +22,7 @@ def sub_video(video_file_path: str, sub_srt_str: str) -> bytes:
     return video_bytes
 
 
-def sub_audio(audio_file_path: str, sub_srt_str: str) -> bytes:
+def sub_audio_sync(audio_file_path: str, sub_srt_str: str) -> bytes:
     subs_file = NamedTemporaryFile()
     video_out_file = NamedTemporaryFile(suffix='.mp4')
     with open(subs_file.name, "w") as f:
@@ -39,7 +40,7 @@ def sub_audio(audio_file_path: str, sub_srt_str: str) -> bytes:
     return video_bytes
 
 
-def get_all_codec_types(file_path: str) -> [str]:
+def get_all_codec_types_sync(file_path: str) -> [str]:
     """
     Returns a list of strings.
     Each string in the list is 'audio' or 'video' or possibly something else ...?
@@ -53,14 +54,27 @@ def get_all_codec_types(file_path: str) -> [str]:
     return output.split("\n")[:-1]
 
 
+async def get_all_codec_types(file_path: str) -> [str]:
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, get_all_codec_types_sync, file_path)
+
+
+async def sub_video(video_file_path: str, sub_srt_str: str) -> bytes:
+    return await asyncio.get_event_loop().run_in_executor(None, sub_video_sync, video_file_path, sub_srt_str)
+
+
+async def sub_audio(audio_file_path: str, sub_srt_str: str) -> bytes:
+    return await asyncio.get_event_loop().run_in_executor(None, sub_audio_sync, audio_file_path, sub_srt_str)
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.NOTSET)
     subs_str = open('subs.srt').read()
     video_path = 'speach_trim.mp4'
 
-    print(get_all_codec_types('sub_video.py'))
-    print(get_all_codec_types(video_path))
+    print(get_all_codec_types_sync('sub_video.py'))
+    print(get_all_codec_types_sync(video_path))
 
-    video_dat = sub_video(video_path, subs_str)
+    video_dat = sub_video_sync(video_path, subs_str)
 
     print(video_dat[:100])

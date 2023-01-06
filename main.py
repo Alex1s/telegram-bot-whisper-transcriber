@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import pathlib
@@ -14,6 +15,7 @@ from telegram.ext import MessageHandler, ApplicationBuilder, CommandHandler, Con
 from filter_allowed_chats import FilterAllowedChats
 from logger import logger
 from sub_video import sub_video, sub_audio, get_all_codec_types
+from transcripe_replicate import transcribe_replicate
 
 
 def create_project_folder():
@@ -68,7 +70,7 @@ async def download_voice_message(context, file_id, mp3_audio_path, ogg_audio_pat
 
 async def transcribe_audio(mp3_audio_path):
     audio = whisper.load_audio(mp3_audio_path)
-    result = model.transcribe(audio)
+    result = await asyncio.get_event_loop().run_in_executor(None, model.transcribe, audio)
     return result
 
 
@@ -103,7 +105,7 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
         path = await (await context.bot.get_file(file_id)).download_to_drive()
 
         # what is that file actually ... ?
-        codecs_types = get_all_codec_types(path)
+        codecs_types = await get_all_codec_types(path)
         if 'audio' not in codecs_types:
             logger.info(f'This video or document does not contain audio. Skipping it ...')
             await context.bot.send_message(
@@ -114,7 +116,13 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
             return
         is_video = 'video' in codecs_types
 
-        result = await transcribe_audio(path)
+        if os.environ.get("REPLICATE_API_TOKEN") is None:
+            logger.info(f'transcribing locally ...')
+
+            result = await transcribe_audio(path)
+        else:
+            logger.info(f'transcribing using replicate ...')
+            result = await transcribe_replicate(path)
 
         # generate srt and vtt
         srt_str = generate_srt(result["segments"])
@@ -122,9 +130,9 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
 
         # if it is a video generated a subbed version of it
         if is_video:
-            subbed_video_data = sub_video(path, srt_str)
+            subbed_video_data = await sub_video(path, srt_str)
         else:  # it should be something with audio ...
-            subbed_video_data = sub_audio(path, srt_str)
+            subbed_video_data = await sub_audio(path, srt_str)
 
         final_time = time.time()
         processing_time = (final_time - start_time)
@@ -153,7 +161,8 @@ async def process_voice_message(update: Update, context: ContextTypes.DEFAULT_TY
     except Exception as e:
         error_message = f"Error converting video to audio. Exception={e}"
         await context.bot.send_message(chat_id=effective_chat_id, text=error_message, reply_to_message_id=message_id)
-        pass
+        raise e
+
     finally:
         os.remove(path)
 
@@ -170,9 +179,10 @@ device = os.environ.get("WHISPER_DEVICE", default="cpu")
 whisper_model = os.environ.get("WHISPER_MODEL", default="large")
 escaping_chars = ['_', '*', '[', ']', '(', ')', '~', '>', '+', '-', '=', '|', '{', '}', '.', '!']
 logger.info(f"configuration: device={device}, whisper_model={whisper_model} allowed_chat_ids={allowed_chat_ids}")
-logger.info(f"Up to load whisper model, this might take a bit")
-model = whisper.load_model(whisper_model, device=device)
-logger.info(f"Finished loading the whisper model")
+if os.environ.get("REPLICATE_API_TOKEN") is None:
+    logger.info(f"Up to load whisper model, this might take a bit")
+    model = whisper.load_model(whisper_model, device=device)
+    logger.info(f"Finished loading the whisper model")
 
 
 create_project_folder()
