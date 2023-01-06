@@ -1,0 +1,6 @@
+#/usr/bin/env bash
+python3.10 -m venv .venv  # create a virtual environment, as of today (07.01.2023) torch does not support python 3.11, thus we need to use python 3.10
+source .venv/bin/activate  # activate the environment
+pip install --upgrade pip  # it might be that pip in the virtual environment is not up to date
+pip install wheel  # wheel should be used to install new packages, sometimes it is not in a virtual environment by default
+pip install -r requirements.txt  # now we install all the requirements needed for this project, EXCEPT ffmpeg, please install this on your own
